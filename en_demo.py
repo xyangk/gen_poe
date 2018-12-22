@@ -5,6 +5,7 @@ import numpy as np
 from keras import layers
 import random
 import sys
+import os
 
 text=open('data/nietzsche.txt').read().lower()
 # text = text[:10000]
@@ -37,18 +38,21 @@ for i, sentence in enumerate(sentences):
 
 
 #定义模型
-model = keras.models.Sequential()
-model.add(layers.LSTM(128, input_shape=(maxlen, len(chars))))
-model.add(layers.Dense(len(chars), activation='softmax'))
+if os.path.isfile('model/charRNN_model.h5'):
+    model = keras.models.load_model('model/charRNN_model.h5')
+else:
+    model = keras.models.Sequential()
+    model.add(layers.LSTM(128, input_shape=(maxlen, len(chars))))
+    model.add(layers.Dense(len(chars), activation='softmax'))
 
-optimizer = keras.optimizers.RMSprop(lr=0.01)
-model.compile(loss='categorical_crossentropy', optimizer=optimizer)
+    optimizer = keras.optimizers.RMSprop(lr=0.01)
+    model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 
 def sample(preds, temperature=1.0):
     preds = np.asarray(preds).astype('float64')
     preds = np.log(preds)/temperature
     exp_preds = np.exp(preds)
-    preds = exp_preds / np.sum(preds)
+    preds = exp_preds / np.sum(exp_preds)
     probas = np.random.multinomial(1, preds, 1)
     return np.argmax(probas)
 
@@ -77,3 +81,5 @@ for epoch in range(1, 60):
 
             sys.stdout.write(next_char)
         sys.stdout.write('\n')
+    print('Saving model....')
+    model.save('model/charRNN_model.h5')

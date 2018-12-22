@@ -34,7 +34,7 @@ y = np.zeros((len(sentences), len(chars)), dtype=np.bool)
 for i, sentence in enumerate(sentences):
     for t, char in enumerate(sentence):
         x[i, t, char_indices[char]] = 1
-    y[i, char_indices[char]] = 1
+    y[i, char_indices[next_chars[i]]] = 1
 
 
 #定义模型
@@ -53,7 +53,7 @@ def sample(preds, temperature=1.0):
     preds = np.log(preds)/temperature
     exp_preds = np.exp(preds)
     preds = exp_preds / np.sum(exp_preds)
-    probas = np.random.multinomial(1, preds, 1)
+    probas = np.random.multinomial(1, preds, 1)#在此概率上采样
     return np.argmax(probas)
 
 for epoch in range(1, 60):

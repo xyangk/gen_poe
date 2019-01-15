@@ -11,10 +11,10 @@ text=open('data/nietzsche.txt').read().lower()
 # text = text[:10000]
 print('Corpus length:', len(text))
 
-maxlen = 60 #序列长度
-step = 3 #序列滑动步长
-sentences = [] #sample
-next_chars = [] #label
+maxlen = 60  # 序列长度
+step = 3  # 序列滑动步长
+sentences = []  # sample
+next_chars = []  # label
 
 for i in range(0, len(text)-maxlen, step):
     sentences.append(text[i:i+maxlen])
@@ -26,7 +26,7 @@ chars = sorted(list(set(text)))
 print('Unique characters:', len(chars))
 char_indices = dict((char, chars.index(char)) for char in chars)
 
-#onehot
+# onehot
 print('Vectorization...')
 x = np.zeros((len(sentences), maxlen, len(chars)), dtype=np.bool)
 y = np.zeros((len(sentences), len(chars)), dtype=np.bool)
@@ -37,7 +37,7 @@ for i, sentence in enumerate(sentences):
     y[i, char_indices[next_chars[i]]] = 1
 
 
-#定义模型
+# 定义模型
 if os.path.isfile('model/charRNN_model.h5'):
     model = keras.models.load_model('model/charRNN_model.h5')
 else:
@@ -48,17 +48,19 @@ else:
     optimizer = keras.optimizers.RMSprop(lr=0.01)
     model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 
+
 def sample(preds, temperature=1.0):
     preds = np.asarray(preds).astype('float64')
     preds = np.log(preds)/temperature
     exp_preds = np.exp(preds)
     preds = exp_preds / np.sum(exp_preds)
-    probas = np.random.multinomial(1, preds, 1)#在此概率上采样
+    probas = np.random.multinomial(1, preds, 1)  # 在此概率上采样
     return np.argmax(probas)
+
 
 for epoch in range(1, 60):
     print('epoch', epoch)
-    model.fit(x, y, batch_size=128, epochs=1)
+    model.fit(x, y, batch_size=512, epochs=1)
     start_index = random.randint(0, len(text)-maxlen-1)
     generated_text = text[start_index:start_index+maxlen]
     print('---generating with seed:"'+generated_text+'"')
@@ -67,7 +69,7 @@ for epoch in range(1, 60):
         print('--- temperature:', temperature)
         sys.stdout.write(generated_text)
         
-        #从开始文本开始生成400个字符
+        # 从开始文本开始生成400个字符
         for i in range(400):
             sampled = np.zeros((1, maxlen, len(chars)))
             for t, char in enumerate(generated_text):

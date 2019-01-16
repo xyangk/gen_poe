@@ -7,7 +7,13 @@ import random
 import sys
 import os
 
-text = open('data/zh/poems.txt').read().lower()
+with open('data/zh/poems_no_title.txt', 'w') as fw:
+    with open('data/zh/poems.txt', 'r') as fr:
+        for line in fr:
+            poem = line.strip().split(":")[1]
+            fw.write(poem+'\n')
+
+text = open('data/zh/poems_no_title.txt').read().lower()
 # text = text[:10000]
 print('Corpus length:', len(text))
 
@@ -16,7 +22,7 @@ step = 3  # 序列滑动步长
 sentences = []  # sample
 next_chars = []  # label
 save_model_name = "zh_charRNN_model.h5"
-batch_size = 128
+batch_size = 256
 
 for i in range(0, len(text)-maxlen, step):
     sentences.append(text[i:i+maxlen])
@@ -47,10 +53,10 @@ if os.path.isfile('model/'+save_model_name):
     model = keras.models.load_model('model/'+save_model_name)
 else:
     model = keras.models.Sequential()
-    model.add(layers.LSTM(128, input_shape=(maxlen, len(chars))))
+    model.add(layers.LSTM(256, input_shape=(maxlen, len(chars))))
     model.add(layers.Dense(len(chars), activation='softmax'))
 
-    optimizer = keras.optimizers.RMSprop(lr=0.01)
+    optimizer = keras.optimizers.Adam(lr=0.001)
     model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 
 
@@ -67,10 +73,11 @@ for epoch in range(1, 60):
     print('epoch', epoch)
     # init_index = range(data_size)
     random.shuffle(sentences)
-    for ind in range(0, data_size, batch_size*100):
+    for ind in range(0, data_size, batch_size*500):
         # inds = init_index[ind:ind+batch_size*100]
-        train_x, train_y = data_generator(ind, ind+batch_size*100)
-        model.fit(train_x, train_y, batch_size=128, epochs=1, initial_epoch=epoch)
+        print(ind, ind+batch_size*500)
+        train_x, train_y = data_generator(ind, ind+batch_size*500)
+        model.fit(train_x, train_y, batch_size=batch_size, epochs=1)
     start_index = random.randint(0, len(text)-maxlen-1)
     generated_text = text[start_index:start_index+maxlen]
     print('---generating with seed:"'+generated_text+'"')
